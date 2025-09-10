@@ -45,7 +45,7 @@
             background-color: #2c2c2c;
             border-color: #333;
         }
-        .form-label, .form-check-label, #timeRangeValue {
+        .form-label, .form-check-label {
             color: #b0b0b0;
         }
         h1 {
@@ -149,30 +149,6 @@
                         <option value="inurl">Nell'URL della pagina</option>
                         </select>
                 </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Numeri compresi tra:</label>
-                    <div class="row g-2">
-                        <div class="col">
-                            <input type="number" class="form-control" id="numberRangeFrom" placeholder="Da">
-                        </div>
-                        <div class="col-auto d-flex align-items-center" style="color: #b0b0b0;">
-                            ...
-                        </div>
-                        <div class="col">
-                            <input type="number" class="form-control" id="numberRangeTo" placeholder="A">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mb-3">
-                    <label for="timeRange" class="form-label">Intervallo di tempo:</label>
-                    <input type="range" class="form-range" id="timeRange" min="0" max="4" value="0">
-                    <span id="timeRangeValue" class="d-block mt-2 text-center">Nessuno</span>
-                    <small class="form-text text-muted" style="color: #888 !important;">
-                        Nota: DuckDuckGo ha un supporto limitato per i filtri di tempo esatti tramite URL. Verrà applicato un filtro generico.
-                    </small>
-                </div>
                 
                 <div class="mb-4 form-check">
                     <input class="form-check-input" type="checkbox" id="imageSearch">
@@ -203,18 +179,12 @@
         let excludedSites = [];
 
         const keywordsLocation = document.getElementById('keywordsLocation');
-        const numberRangeFrom = document.getElementById('numberRangeFrom');
-        const numberRangeTo = document.getElementById('numberRangeTo');
+        // Rimosso numberRangeFrom e numberRangeTo
 
-        const timeRange = document.getElementById('timeRange');
+        // Rimosso timeRange e timeRangeValue
         const imageSearch = document.getElementById('imageSearch');
-        const timeRangeValue = document.getElementById('timeRangeValue');
         
-        const timeRanges = ['Nessuno', 'Ultimi 24 ore', 'Ultima settimana', 'Ultimo mese', 'Ultimo anno'];
-
-        timeRange.addEventListener('input', () => {
-            timeRangeValue.textContent = timeRanges[timeRange.value];
-        });
+        // Rimosso timeRanges e l'event listener per timeRange
 
         function createSiteBadge(site, listArray, listDiv) {
             const siteText = site.trim();
@@ -280,8 +250,7 @@
             }
         });
         
-        numberRangeFrom.addEventListener('input', saveStateToLocalStorage);
-        numberRangeTo.addEventListener('input', saveStateToLocalStorage);
+        // Rimosso event listener per numberRangeFrom e numberRangeTo
         keywordsLocation.addEventListener('change', saveStateToLocalStorage);
 
         function saveStateToLocalStorage() {
@@ -293,16 +262,15 @@
                 includedSites: includedSites,
                 excludedSites: excludedSites,
                 keywordsLocation: keywordsLocation.value,
-                numberRangeFrom: numberRangeFrom.value,
-                numberRangeTo: numberRangeTo.value,
-                timeRange: timeRange.value,
+                // Rimosso numberRangeFrom e numberRangeTo
+                // Rimosso timeRange
                 imageSearch: imageSearch.checked
             };
-            localStorage.setItem('ddgQueryBuilderState', JSON.stringify(currentState)); // Cambiato il nome della chiave
+            localStorage.setItem('ddgQueryBuilderState', JSON.stringify(currentState));
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            const savedState = localStorage.getItem('ddgQueryBuilderState'); // Cambiato il nome della chiave
+            const savedState = localStorage.getItem('ddgQueryBuilderState');
             if (savedState) {
                 const state = JSON.parse(savedState);
                 keywords.value = state.keywords || '';
@@ -316,12 +284,10 @@
                 populateSiteList(excludedSites, siteExcludeListDiv);
 
                 keywordsLocation.value = state.keywordsLocation || '';
-                numberRangeFrom.value = state.numberRangeFrom || '';
-                numberRangeTo.value = state.numberRangeTo || '';
-
-                timeRange.value = state.timeRange || '0';
+                // Rimosso numberRangeFrom e numberRangeTo
+                // Rimosso timeRange
                 imageSearch.checked = state.imageSearch || false;
-                timeRangeValue.textContent = timeRanges[timeRange.value];
+                // Rimosso timeRangeValue.textContent = timeRanges[timeRange.value];
             }
         });
 
@@ -333,29 +299,22 @@
             let queryParts = [];
             let mainQueryKeywords = [];
 
-            // Gestione delle parole chiave e della loro posizione
             const keywordsValue = keywords.value.trim();
             if (keywordsValue !== '') {
                 mainQueryKeywords.push(...keywordsValue.split(',').map(kw => kw.trim()));
             }
 
-            // Aggiungi frase esatta
             if (exactPhrase.value.trim() !== '') {
                 mainQueryKeywords.push(`"${exactPhrase.value.trim()}"`);
             }
 
-            // Aggiungi parole da escludere
             if (excludeWords.value.trim() !== '') {
                 mainQueryKeywords.push(...excludeWords.value.split(',').map(ew => `-${ew.trim()}`));
             }
 
-            // Seleziona dove devono apparire i termini
             const locationPrefix = keywordsLocation.value;
             if (locationPrefix !== '') {
-                 // DuckDuckGo applica inurl/intitle a ogni parola singolarmente, non a tutte le keywords insieme come allinurl/allintitle di Google
-                 // Quindi applichiamo il prefisso a ogni parola chiave principale (non frase esatta o esclusione)
                 const processedKeywords = mainQueryKeywords.map(term => {
-                    // Controlla se è già un operatore (es. -parola, "frase")
                     if (term.startsWith('-') || term.startsWith('"') && term.endsWith('"')) {
                         return term;
                     }
@@ -366,42 +325,30 @@
                 queryParts.push(...mainQueryKeywords);
             }
 
-            // Add filetype (DuckDuckGo supporta filetype: ma a volte è meno robusto di Google)
             if (filetype.value !== '') {
                 queryParts.push(`filetype:${filetype.value}`);
             }
 
-            // Add included sites (site: funziona uguale)
             if (includedSites.length > 0) {
                 queryParts.push(includedSites.map(site => `site:${site}`).join(' '));
             }
 
-            // Add excluded sites (-site: funziona uguale)
             if (excludedSites.length > 0) {
                 queryParts.push(excludedSites.map(site => `-site:${site}`).join(' '));
             }
 
-            // Add number range (funziona uguale: 100..200)
-            if (numberRangeFrom.value !== '' && numberRangeTo.value !== '') {
-                queryParts.push(`${numberRangeFrom.value}..${numberRangeTo.value}`);
-            }
+            // Rimosso la logica per number range
             
             const finalQuery = queryParts.join(' ').trim();
             
-            let timeParam = '';
-            // DuckDuckGo non ha un parametro URL robusto come as_qdr di Google per il filtro temporale esatto.
-            // Possiamo provare a usare un parametro generico se presente, o semplicemente ignorarlo.
-            // Per ora, lo ignoriamo o lasciamo come commento dato il supporto limitato.
-            // if (timeRange.value !== '0') {
-            //     timeParam = '&t=d'; // Questo è un esempio generico, ma DDG spesso non lo rispetta come Google
-            // }
+            // Rimosso timeParam
 
             let baseUrl = 'https://duckduckgo.com/?q=';
             if (imageSearch.checked) {
-                baseUrl = 'https://duckduckgo.com/?q=images+'; // DuckDuckGo spesso richiede "images" nella query per la ricerca di immagini
+                baseUrl = 'https://duckduckgo.com/?q=images+';
             }
             
-            const url = `${baseUrl}${encodeURIComponent(finalQuery)}`; // Rimosso timeParam, vedere nota sopra
+            const url = `${baseUrl}${encodeURIComponent(finalQuery)}`;
 
             if (finalQuery) {
                 window.open(url, '_blank');
