@@ -150,11 +150,6 @@
                         </select>
                 </div>
                 
-                <div class="mb-4 form-check">
-                    <input class="form-check-input" type="checkbox" id="imageSearch">
-                    <label class="form-check-label" for="imageSearch">Cerca immagini</label>
-                </div>
-                
                 <button type="submit" class="btn btn-primary w-100">Cerca su DuckDuckGo</button>
             </form>
         </div>
@@ -179,7 +174,7 @@
         let excludedSites = [];
 
         const keywordsLocation = document.getElementById('keywordsLocation');
-        const imageSearch = document.getElementById('imageSearch');
+        // Rimosso const imageSearch = document.getElementById('imageSearch');
         
         function createSiteBadge(site, listArray, listDiv) {
             const siteText = site.trim();
@@ -246,7 +241,7 @@
         });
         
         keywordsLocation.addEventListener('change', saveStateToLocalStorage);
-        imageSearch.addEventListener('change', saveStateToLocalStorage);
+        // Rimosso imageSearch.addEventListener('change', saveStateToLocalStorage);
 
         function saveStateToLocalStorage() {
             const currentState = {
@@ -257,7 +252,7 @@
                 includedSites: includedSites,
                 excludedSites: excludedSites,
                 keywordsLocation: keywordsLocation.value,
-                imageSearch: imageSearch.checked
+                // Rimosso imageSearch: imageSearch.checked
             };
             localStorage.setItem('ddgQueryBuilderState', JSON.stringify(currentState));
         }
@@ -277,7 +272,7 @@
                 populateSiteList(excludedSites, siteExcludeListDiv);
 
                 keywordsLocation.value = state.keywordsLocation || '';
-                imageSearch.checked = state.imageSearch || false;
+                // Rimosso imageSearch.checked = state.imageSearch || false;
             }
         });
 
@@ -287,4 +282,59 @@
             saveStateToLocalStorage();
             
             let queryParts = [];
-            let mainQueryKeywords
+            let mainQueryKeywords = [];
+
+            const keywordsValue = keywords.value.trim();
+            if (keywordsValue !== '') {
+                mainQueryKeywords.push(...keywordsValue.split(',').map(kw => kw.trim()));
+            }
+
+            if (exactPhrase.value.trim() !== '') {
+                mainQueryKeywords.push(`"${exactPhrase.value.trim()}"`);
+            }
+
+            if (excludeWords.value.trim() !== '') {
+                mainQueryKeywords.push(...excludeWords.value.split(',').map(ew => `-${ew.trim()}`));
+            }
+
+            const locationPrefix = keywordsLocation.value;
+            if (locationPrefix !== '') {
+                const processedKeywords = mainQueryKeywords.map(term => {
+                    if (term.startsWith('-') || (term.startsWith('"') && term.endsWith('"'))) {
+                        return term;
+                    }
+                    return `${locationPrefix}:${term}`;
+                });
+                queryParts.push(...processedKeywords);
+            } else {
+                queryParts.push(...mainQueryKeywords);
+            }
+
+            if (filetype.value !== '') {
+                queryParts.push(`filetype:${filetype.value}`);
+            }
+
+            if (includedSites.length > 0) {
+                queryParts.push(includedSites.map(site => `site:${site}`).join(' '));
+            }
+
+            if (excludedSites.length > 0) {
+                queryParts.push(excludedSites.map(site => `-site:${site}`).join(' '));
+            }
+            
+            const finalQuery = queryParts.join(' ').trim();
+            
+            // La baseUrl è sempre per la ricerca web standard, dato che la ricerca immagini è stata rimossa
+            let baseUrl = 'https://duckduckgo.com/?q='; 
+            
+            const url = `${baseUrl}${encodeURIComponent(finalQuery)}`;
+
+            if (finalQuery) {
+                window.open(url, '_blank');
+            } else {
+                alert("La query è vuota! Inserisci almeno una parola chiave o un sito.");
+            }
+        });
+    </script>
+</body>
+</html>
