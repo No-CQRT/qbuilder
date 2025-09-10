@@ -15,7 +15,7 @@
         .container {
             max-width: 800px;
         }
-        .form-control, .form-select, .form-range {
+        .form-control, .form-select {
             background-color: #333;
             color: #e0e0e0;
             border-color: #555;
@@ -23,7 +23,7 @@
         .form-control::placeholder {
             color: #aaa;
         }
-        .form-control:focus, .form-select:focus, .form-range:focus {
+        .form-control:focus, .form-select:focus {
             background-color: #444;
             color: #fff;
             border-color: #666;
@@ -179,13 +179,8 @@
         let excludedSites = [];
 
         const keywordsLocation = document.getElementById('keywordsLocation');
-        // Rimosso numberRangeFrom e numberRangeTo
-
-        // Rimosso timeRange e timeRangeValue
         const imageSearch = document.getElementById('imageSearch');
         
-        // Rimosso timeRanges e l'event listener per timeRange
-
         function createSiteBadge(site, listArray, listDiv) {
             const siteText = site.trim();
             if (siteText === '') return;
@@ -250,8 +245,8 @@
             }
         });
         
-        // Rimosso event listener per numberRangeFrom e numberRangeTo
         keywordsLocation.addEventListener('change', saveStateToLocalStorage);
+        imageSearch.addEventListener('change', saveStateToLocalStorage);
 
         function saveStateToLocalStorage() {
             const currentState = {
@@ -262,8 +257,6 @@
                 includedSites: includedSites,
                 excludedSites: excludedSites,
                 keywordsLocation: keywordsLocation.value,
-                // Rimosso numberRangeFrom e numberRangeTo
-                // Rimosso timeRange
                 imageSearch: imageSearch.checked
             };
             localStorage.setItem('ddgQueryBuilderState', JSON.stringify(currentState));
@@ -284,10 +277,7 @@
                 populateSiteList(excludedSites, siteExcludeListDiv);
 
                 keywordsLocation.value = state.keywordsLocation || '';
-                // Rimosso numberRangeFrom e numberRangeTo
-                // Rimosso timeRange
                 imageSearch.checked = state.imageSearch || false;
-                // Rimosso timeRangeValue.textContent = timeRanges[timeRange.value];
             }
         });
 
@@ -297,65 +287,4 @@
             saveStateToLocalStorage();
             
             let queryParts = [];
-            let mainQueryKeywords = [];
-
-            const keywordsValue = keywords.value.trim();
-            if (keywordsValue !== '') {
-                mainQueryKeywords.push(...keywordsValue.split(',').map(kw => kw.trim()));
-            }
-
-            if (exactPhrase.value.trim() !== '') {
-                mainQueryKeywords.push(`"${exactPhrase.value.trim()}"`);
-            }
-
-            if (excludeWords.value.trim() !== '') {
-                mainQueryKeywords.push(...excludeWords.value.split(',').map(ew => `-${ew.trim()}`));
-            }
-
-            const locationPrefix = keywordsLocation.value;
-            if (locationPrefix !== '') {
-                const processedKeywords = mainQueryKeywords.map(term => {
-                    if (term.startsWith('-') || term.startsWith('"') && term.endsWith('"')) {
-                        return term;
-                    }
-                    return `${locationPrefix}:${term}`;
-                });
-                queryParts.push(...processedKeywords);
-            } else {
-                queryParts.push(...mainQueryKeywords);
-            }
-
-            if (filetype.value !== '') {
-                queryParts.push(`filetype:${filetype.value}`);
-            }
-
-            if (includedSites.length > 0) {
-                queryParts.push(includedSites.map(site => `site:${site}`).join(' '));
-            }
-
-            if (excludedSites.length > 0) {
-                queryParts.push(excludedSites.map(site => `-site:${site}`).join(' '));
-            }
-
-            // Rimosso la logica per number range
-            
-            const finalQuery = queryParts.join(' ').trim();
-            
-            // Rimosso timeParam
-
-            let baseUrl = 'https://duckduckgo.com/?q=';
-            if (imageSearch.checked) {
-                baseUrl = 'https://duckduckgo.com/?q=images+';
-            }
-            
-            const url = `${baseUrl}${encodeURIComponent(finalQuery)}`;
-
-            if (finalQuery) {
-                window.open(url, '_blank');
-            } else {
-                alert("La query è vuota! Inserisci almeno una parola chiave o un sito.");
-            }
-        });
-    </script>
-</body>
-</html>
+            let mainQueryKeywords
